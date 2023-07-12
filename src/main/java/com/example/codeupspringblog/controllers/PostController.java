@@ -1,4 +1,6 @@
 package com.example.codeupspringblog.controllers;
+import com.example.codeupspringblog.Services.AuthBuddy;
+import com.example.codeupspringblog.models.EmailService;
 import com.example.codeupspringblog.models.Post;
 import com.example.codeupspringblog.models.User;
 import com.example.codeupspringblog.repositories.PostRepository;
@@ -18,9 +20,13 @@ import java.util.Optional;
 public class PostController {
     private PostRepository postDao;
     private UserRepository userDao;
+    private EmailService emailService;
 
     @GetMapping("")
     public String posts(Model model){
+        User loggedInUser = AuthBuddy.getLoggedInUser();
+        model.addAttribute("loggedInUser", loggedInUser);
+
         List<Post> posts = postDao.findAll();
 
         model.addAttribute("posts",posts);
@@ -28,36 +34,55 @@ public class PostController {
     }
 
     @GetMapping("/{id}")
-    public String showSinglePost(@PathVariable Long id, Model model){
+    public String showSinglePost(@PathVariable Long id, Model model) {
+        User loggedInUser = AuthBuddy.getLoggedInUser();
+        model.addAttribute("loggedInUser", loggedInUser);
 
+        // find the desired post in the db
         Optional<Post> optionalPost = postDao.findById(id);
         if(optionalPost.isEmpty()) {
             System.out.printf("Post with id " + id + " not found!");
             return "home";
         }
 
+        // if we get here, then we found the post. so just open up the optional
         model.addAttribute("post", optionalPost.get());
-        return "posts/show";
+        return "/posts/show";
     }
 
     @GetMapping("/create")
-    public String showCreate() {
+    public String showCreate(Model model) {
+        User loggedInUser = AuthBuddy.getLoggedInUser();
+        if(loggedInUser.getId() == 0) {
+            return "redirect:/login";
+        }
+
+        model.addAttribute("loggedInUser", loggedInUser);
+
+        model.addAttribute("newPost", new Post());
         return "/posts/create";
     }
 
     @PostMapping("/create")
-    public String doCreate(@RequestParam String title, @RequestParam String body) {
-        Post post = new Post();
-        post.setTitle(title);
-        post.setBody(body);
+    public String doCreate(@ModelAttribute Post post) {
+        User loggedInUser = AuthBuddy.getLoggedInUser();
+        if(loggedInUser.getId() == 0) {
+            return "redirect:/login";
+        }
 
-        User loggedInUser = userDao.findById(1L).get();
         post.setUser(loggedInUser);
-
         postDao.save(post);
 
         return "redirect:/posts";
     }
 
+    @GetMapping("/{id}/edit")
+    public String showEdit(@PathVariable Long id, Model model) {
+        User loggedInUser = AuthBuddy.getLoggedInUser();
+        model.addAttribute("loggedInUser", loggedInUser);
 
+        Post postToEdit = postDao.getReferenceById(id);
+        model.addAttribute("newPost", postToEdit);
+        return "/posts/create";
+    }
 }

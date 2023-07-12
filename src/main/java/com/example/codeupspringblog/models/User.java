@@ -5,11 +5,10 @@ import lombok.*;
 
 import java.util.List;
 
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
-@ToString
 
 @Entity
 @Table(name = "blog_users")
@@ -18,18 +17,30 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(length = 255, nullable = false)
-    private String userName;
+    @Column(nullable = false)
+    private String username;
 
-    @Column(length = 255, nullable = false)
+    @Column(nullable = false)
     private String email;
 
-    @Column(length = 255, nullable = false)
+    @Column(nullable = false)
     private String password;
 
-
-
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user", fetch = FetchType.EAGER)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "user")
     private List<Post> posts;
 
+//    @OneToMany(cascade = CascadeType.ALL, mappedBy = "parentUser")
+//    private List<Ad> Ads;
+
+    public User(User copy) {
+        id = copy.id; // This line is SUPER important! Many things won't work if it's absent
+        email = copy.email;
+        username = copy.username;
+        password = copy.password;
+    }
+
+    @Override
+    public String toString() {
+        return "User id " + id + " username: " + username;
+    }
 }
